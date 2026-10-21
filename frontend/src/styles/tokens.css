@@ -1,0 +1,145 @@
+/* ============================================================
+   NanoSSH 设计令牌
+   目标：冷调近黑表面 + 单一强调色 + 发丝级描边，克制、有质感。
+
+   三层契约（P5 落地）：
+     1. 颜色/表面 —— 深浅两套，跟随系统（prefers-color-scheme）
+     2. 类型刻度 —— --fs-* 七档，界面字号只允许取自刻度
+     3. 间距节奏 —— --sp-* 以 4px 为基数，布局间隙只允许取自节奏
+   ============================================================ */
+:root {
+  color-scheme: dark;
+
+  /* 表面：由深到浅，带极轻的冷色偏移，避免纯灰的"塑料感" */
+  --bg-0: #0b0d10;   /* 主区（终端底） */
+  --bg-1: #101319;   /* 侧栏 */
+  --bg-2: #161b24;   /* 卡片 / 输入框 */
+  --bg-3: #1d2330;   /* 浮层 / 菜单 */
+  --bg-hover: #1a202b;
+
+  --line: #242c38;
+  --line-soft: #1a202a;
+  --line-strong: #313b4a;
+
+  --text-0: #e9edf4;
+  --text-1: #97a1b1;
+  --text-2: #667085;
+  --text-3: #475060;
+
+  /* 强调色：冷蓝。只用于"可聚焦/当前活动"这类真正需要指引的地方 */
+  --accent: #5b9dff;
+  --accent-soft: rgba(91, 157, 255, 0.13);
+  --accent-line: rgba(91, 157, 255, 0.42);
+  --ok: #38d17a;
+  --ok-soft: rgba(56, 209, 122, 0.13);
+  --warn: #eab308;
+  --danger: #ff5f56;
+  --danger-soft: rgba(255, 95, 86, 0.12);
+  --danger-text: #ff9a92;
+
+  --r-sm: 6px;
+  --r-md: 9px;
+  --r-lg: 14px;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 18px 40px -12px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.5);
+
+  /* 遮罩：覆盖在内容之上的半透明幕（连接中、模态遮挡） */
+  --scrim: rgba(11, 13, 16, 0.82);
+
+  --ease: cubic-bezier(0.22, 0.68, 0.24, 1);
+  --dur: 130ms;
+  --dur-fast: 80ms;
+  --dur-slow: 240ms;
+
+  /* 类型刻度：以 13px 正文为基准的紧凑尺度。
+     界面里任何 font-size 只允许落在这七档上，禁止散落的 11.5px / 13.5px。 */
+  --fs-2xs: 10px;   /* 徽标 / 角标 / 极小标签 */
+  --fs-xs: 11px;    /* 元信息 / 辅助说明 */
+  --fs-sm: 12px;    /* 次级正文 */
+  --fs-md: 13px;    /* 正文基准 */
+  --fs-lg: 15px;    /* 小标题 / 强调数值 */
+  --fs-xl: 18px;    /* 对话框标题 */
+  --fs-2xl: 22px;   /* 空状态主视觉标题 */
+
+  --lh-tight: 1.35;
+  --lh-normal: 1.6;
+  --lh-loose: 1.8;
+
+  /* 间距节奏：4px 基数。间隙/内边距只允许取自节奏。 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 40px;
+
+  /* 终端工作面：深浅两套主题下都保持深色。
+     终端是"干活的面"，深底高对比更稳，且与外壳形成明确层次。 */
+  --term-bg: #0b0d10;
+
+  /* Mica 玻璃表面（仅 html.mica 下使用，Win11 22621+）：
+     半透明把系统材质透出来，配 backdrop-filter 收敛噪点。 */
+  --glass-titlebar: rgba(16, 19, 25, 0.55);
+  --glass-rail: rgba(16, 19, 25, 0.42);
+
+  --ui-font: "Segoe UI Variable Text", "Segoe UI", -apple-system, "Microsoft YaHei UI",
+    system-ui, "PingFang SC", sans-serif;
+  --mono-font: "Cascadia Mono", ui-monospace, "JetBrains Mono", Consolas, "Microsoft YaHei Mono",
+    monospace;
+
+  --titlebar-h: 40px;
+  --rail-w: 300px;
+  --tabs-h: 36px;
+}
+
+/* 浅色主题：跟随系统。只换令牌值，组件层不感知主题。 */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+
+    --bg-0: #f6f7fa;
+    --bg-1: #edeff4;
+    --bg-2: #ffffff;
+    --bg-3: #ffffff;
+    --bg-hover: #e5e9f0;
+
+    --line: #d6dce5;
+    --line-soft: #e4e8ee;
+    --line-strong: #c2cad6;
+
+    --text-0: #1b2432;
+    --text-1: #4e596b;
+    --text-2: #748094;
+    --text-3: #9aa5b5;
+
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.10);
+    --accent-line: rgba(37, 99, 235, 0.38);
+    --ok: #16a34a;
+    --ok-soft: rgba(22, 163, 74, 0.12);
+    --warn: #b45309;
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.10);
+    --danger-text: #b91c1c;
+
+    --shadow-1: 0 1px 2px rgba(22, 28, 38, 0.08);
+    --shadow-2: 0 18px 40px -12px rgba(22, 28, 38, 0.18), 0 2px 8px rgba(22, 28, 38, 0.08);
+
+    --scrim: rgba(246, 247, 250, 0.80);
+
+    --glass-titlebar: rgba(237, 239, 244, 0.55);
+    --glass-rail: rgba(237, 239, 244, 0.42);
+  }
+}
+
+/* 系统"减少动态效果"：动效收敛到即时，保留状态变化本身。 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur: 1ms;
+    --dur-fast: 1ms;
+    --dur-slow: 1ms;
+    --ease: linear;
+  }
+}

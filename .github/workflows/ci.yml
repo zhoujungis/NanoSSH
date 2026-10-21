@@ -1,0 +1,126 @@
+# NanoSSH CI：测试 + 打包（exe / msi）
+#
+# 触发与产物：
+#   push / PR        → 只跑测试（go vet / go test / tsc / govulncheck）
+#   v* tag / 手动触发 → 额外打包，产出绿色版 zip 与 MSI 安装包
+#   v* tag           → 自动把产物挂到 GitHub Release
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 测试
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 前端依赖、类型检查与构建
+        working-directory: frontend
+        shell: pwsh
+        run: |
+          npm ci
+          npx tsc --noEmit
+          npm run build   # 生成 frontend/dist：main 包 go:embed 依赖它，go vet/test 才能编译
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+      - name: govulncheck
+        shell: pwsh
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  package:
+    name: 打包
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    permissions:
+      contents: write # v* tag 时创建 GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装 Wails CLI（与 go.mod 版本对齐）
+        shell: pwsh
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.0
+
+      - name: 前端依赖
+        working-directory: frontend
+        shell: pwsh
+        run: npm ci
+
+      # build.ps1 内含：GOARCH=amd64 钉死 + PE 头断言 + 体积守卫。
+      # 漏洞扫描已在 test job 跑过，这里跳过以免重复。
+      - name: 构建 exe
+        shell: pwsh
+        run: .\build.ps1 -SkipVuln
+
+      - name: 解析版本号
+        id: ver
+        shell: pwsh
+        run: |
+          $ref = "${{ github.ref_name }}"
+          if ($ref -match '(\d+\.\d+\.\d+)') { $v = $Matches[1] } else { $v = "0.0.0" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "版本: $v"
+
+      - name: 打包 MSI
+        shell: pwsh
+        run: .\build\windows\make-msi.ps1 -Version ${{ steps.ver.outputs.version }}
+
+      - name: 打包绿色版 zip
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          Compress-Archive -Path build\bin\NanoSSH.exe -DestinationPath "build\bin\NanoSSH-$v-windows-x64.zip" -Force
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: NanoSSH-${{ steps.ver.outputs.version }}-windows-x64
+          path: |
+            build/bin/NanoSSH-*-windows-x64.zip
+            build/bin/NanoSSH-*-x64.msi
+
+      - name: 创建 GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/bin/NanoSSH-*-windows-x64.zip
+            build/bin/NanoSSH-*-x64.msi

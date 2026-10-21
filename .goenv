@@ -1,0 +1,4 @@
+GOPROXY=https://goproxy.cn,direct
+GOSUMDB=sum.golang.google.cn
+GOARCH=amd64
+GOOS=windows

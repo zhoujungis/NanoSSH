@@ -1,0 +1,18 @@
+# 构建产物
+/build/bin/
+/build/darwin/
+/build/windows/NanoSSH-*.exe
+
+# Wails 生成的绑定（每次构建重新生成）
+/frontend/wailsjs/
+
+# 前端
+/node_modules/
+/frontend/node_modules/
+/frontend/dist/
+
+# 本地环境与编辑器
+/.idea/
+/.vscode/
+/.trae/
+*.log

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NanoSSH MSI 安装包描述（WiX Toolset 3.x）
+
+  由 build\windows\make-msi.ps1 调 candle/light 编译，三个变量从命令行传入：
+    ProductVersion —— 数字三段版本（x.y.z）
+    ExePath        —— 待打包的 NanoSSH.exe 绝对路径
+    IconPath       —— 安装包/卸载项图标
+
+  安装布局：perMachine x64，装到 Program Files\NanoSSH，
+  创建开始菜单与桌面快捷方式，卸载不留残余。
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="NanoSSH"
+           Language="2052"
+           Codepage="936"
+           Version="$(var.ProductVersion)"
+           Manufacturer="NanoSSH"
+           UpgradeCode="5A9E2B21-9F27-4E2C-9B3D-6C1E0D8A7C41">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Platform="x64"
+             Description="NanoSSH —— 刻意做窄的轻量 SSH 客户端"
+             Manufacturer="NanoSSH" />
+
+    <!-- 同产品升级：装新版自动替换旧版；降级被拒绝 -->
+    <MajorUpgrade DowngradeErrorMessage="已安装更新版本的 NanoSSH，请先卸载后再安装此版本。" />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon" />
+
+    <Feature Id="ProductFeature" Title="NanoSSH" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="NanoSSH">
+          <Component Id="MainExecutable" Guid="*">
+            <File Id="NanoSSHExe" Source="$(var.ExePath)" KeyPath="yes" Checksum="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="NanoSSH">
+          <Component Id="StartMenuShortcut" Guid="*">
+            <Shortcut Id="StartMenuLink"
+                      Name="NanoSSH"
+                      Description="刻意做窄的轻量 SSH 客户端"
+                      Target="[INSTALLFOLDER]NanoSSH.exe"
+                      WorkingDirectory="INSTALLFOLDER"
+                      Icon="AppIcon" />
+            <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
+            <RegistryValue Root="HKCU" Key="SOFTWARE\NanoSSH" Name="StartMenuShortcut"
+                           Type="integer" Value="1" KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="*">
+          <Shortcut Id="DesktopLink"
+                    Name="NanoSSH"
+                    Description="刻意做窄的轻量 SSH 客户端"
+                    Target="[INSTALLFOLDER]NanoSSH.exe"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon" />
+          <RegistryValue Root="HKCU" Key="SOFTWARE\NanoSSH" Name="DesktopShortcut"
+                         Type="integer" Value="1" KeyPath="yes" />
+        </Component>
+      </Directory>
+    </Directory>
+  </Product>
+</Wix>
