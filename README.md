@@ -223,3 +223,11 @@ go run ./cmd/sshprobe serve                            # 起进程内测试 sshd
 ## 许可
 
 暂未指定许可证。
+
+<!-- blog-backlink -->
+---
+
+## 相关阅读
+
+- 博客：[尘世栈帧 — 技术、编程、AI 与科学](https://blog.zhoujun.dev/)
+- 项目详解：[NanoSSH：13 MB 的 Windows SSH 客户端怎么做](https://blog.zhoujun.dev/article/nanoss-windows-ssh-client/)
